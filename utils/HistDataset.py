@@ -25,7 +25,5 @@ class HistDataset(Dataset):
         self,
         idx: int,
     ) -> Tuple[torch.FloatTensor, int]:
-        # YOUR CODE HERE
-        img = torch.Tensor(self.imgs[idx]).view(3, 224, 224)
-        img = self.transform(img)
+        img = self.transform(self.imgs[idx]).transpose(0, 2)
         return torch.FloatTensor(img), self.labels[idx]
