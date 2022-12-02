@@ -3,9 +3,15 @@ from torch.utils.data import Dataset
 from typing import Tuple
 from torchvision import transforms
 import numpy as np
+import gdown
+
+def download_dataset( path : str, test: bool = False):
+    if test:
+        gdown.download(f'https://drive.google.com/uc?id=1RfPou3pFKpuHDJZ-D9XDFzgvwpUBFlDr', path, quiet=False)
+    else:
+        gdown.download(f'https://drive.google.com/uc?id=1XtQzVQ5XbrfxpLHJuL0XBGJ5U7CS', path, quiet=False)
 
 
-#Dataset from (224, 224, 3) to (3, 224, 224) for torch convs
 class HistDataset(Dataset):
 
     def __init__(
@@ -25,5 +31,5 @@ class HistDataset(Dataset):
         self,
         idx: int,
     ) -> Tuple[torch.FloatTensor, int]:
-        img = self.transform(self.imgs[idx]).transpose(0, 2)
+        img = self.transform(self.imgs[idx])
         return torch.FloatTensor(img), self.labels[idx]
