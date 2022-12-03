@@ -43,7 +43,7 @@ class GaborConv(_ConvNd):
         pad = self.kernel_size[0]//2
         new_weight = F.pad(self.weight.view(-1, 1, self.weight.size()[-1], 
                             self.weight.size()[-1]), (pad,pad,pad,pad), mode='constant')
-        new_weight = F.conv2d(new_weight, self.gabor_bank).view(-1, 
+        new_weight = F.conv2d(new_weight, self.gabor_bank.to(new_weight.device)).view(-1, 
                     self.weight.size()[1], self.weight.size()[2], self.weight.size()[3])
         new_weight
         y = F.conv2d(x, new_weight, padding = self.padding, stride = self.stride)

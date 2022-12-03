@@ -9,7 +9,7 @@ def download_dataset( path : str, test: bool = False):
     if test:
         gdown.download(f'https://drive.google.com/uc?id=1RfPou3pFKpuHDJZ-D9XDFzgvwpUBFlDr', path, quiet=False)
     else:
-        gdown.download(f'https://drive.google.com/uc?id=1XtQzVQ5XbrfxpLHJuL0XBGJ5U7CS', path, quiet=False)
+        gdown.download(f'https://drive.google.com/uc?id=1XtQzVQ5XbrfxpLHJuL0XBGJ5U7CS-cLi', path, quiet=False)
 
 
 class HistDataset(Dataset):

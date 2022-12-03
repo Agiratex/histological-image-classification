@@ -1,19 +1,24 @@
 import torch
 from torch import nn
+from torch import optim
 from torchvision import transforms
 from torchsummary import summary
-from utils.HistDataset import HistDataset
+from torch.utils.tensorboard import SummaryWriter
+from utils.HistDataset import HistDataset, download_dataset
+from utils.train import train
 from GaborLayer.GaborLayer import GaborConv
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-batch_size = 64
+device = "cuda:0"
+batch_size = 128
 
-# train_dataset = HistDataset('datasets/train.npz', transform)
-# trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
-#                                           shuffle=True, num_workers=2)
-# test_dataset = HistDataset('datasets/test.npz', transform)
-# testloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
-#                                           shuffle=False, num_workers=2)
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(0.5, 0.5)])
+
+train_dataset = HistDataset('datasets/train.npz', transform)
+trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
+                                          shuffle=True, num_workers=2)
+test_dataset = HistDataset('datasets/test.npz', transform)
+testloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
+                                          shuffle=False, num_workers=2)
 
 channels = 24
 GCN = nn.Sequential(
@@ -62,9 +67,16 @@ GCN = nn.Sequential(
     nn.ReLU(),
 
     nn.Flatten(1),
+    nn.Dropout(0.2),
     nn.Linear(32*channels, 128),
     nn.ReLU(),
     nn.Linear(128, 9)
 ).to(device)
 
-summary(GCN, (3, 224, 224))
+summary(GCN, (3, 224, 224), -1)
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(GCN.parameters(), lr = 0.01)
+writer = SummaryWriter(log_dir=f"Hist/Gabor5x5")
+train(100, GCN, trainloader, testloader, optimizer, criterion, writer, device, "pretrained/HistGab5x5.pth")
+print('Finished Training')

@@ -3,7 +3,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from collections import defaultdict
 import numpy as np
-from compute_metrics import compute_metrics
+from utils.compute_metrics import compute_metrics
 
 
 def train_epoch(
