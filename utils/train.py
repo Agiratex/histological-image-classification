@@ -156,13 +156,12 @@ def train(
             device=device,
             epoch=epoch,
         )
-        if(epoch % 3 == 0):
-            evaluate_epoch(
-                model=model,
-                dataloader=test_dataloader,
-                criterion=criterion,
-                writer=writer,
-                device=device,
-                epoch=epoch,
-            )
+        evaluate_epoch(
+            model=model,
+            dataloader=test_dataloader,
+            criterion=criterion,
+            writer=writer,
+            device=device,
+            epoch=epoch,
+        )
         torch.save(model.state_dict(), path)
