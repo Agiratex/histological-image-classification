@@ -164,4 +164,4 @@ def train(
             device=device,
             epoch=epoch,
         )
-        torch.save(model.state_dict(), path)
+        torch.save(model.state_dict(), f"{path}{epoch}.pth")
