@@ -134,3 +134,6 @@ datasets/
 
 # Logs
 logs/
+
+#Pretrained
+pretrained/

@@ -1,6 +1,6 @@
 from torch import Tensor, LongTensor, max
 from typing import Dict
-from sklearn.metrics import accuracy_score, precision_score, f1_score
+from sklearn.metrics import accuracy_score
 
 def compute_metrics(
     outputs: Tensor,
@@ -27,3 +27,6 @@ def compute_metrics(
 
     metrics["accuracy"] = accuracy
     return metrics
+
+if __name__ == '__main__':
+    pass

@@ -7,10 +7,10 @@ from torch.utils.tensorboard import SummaryWriter
 from utils.HistDataset import HistDataset, download_dataset
 from utils.train import train
 from GaborLayer.GaborLayer import FourierGaborConv, GaborConv
+from GResNet.GResNet import GResNet50
 
 # download_dataset("datasets/train.npz", test=False)
 # download_dataset("datasets/test.npz", test=True)
-
 class ConcGCN(nn.Module):
     def __init__(self):
         super(ConcGCN, self).__init__()
@@ -245,27 +245,266 @@ class ConcGCN(nn.Module):
         
         return x
 
-device = "cuda:1"
-batch_size = 128
+class ConcCNN(nn.Module):
+    def __init__(self):
+        super(ConcCNN, self).__init__()
+        channels = 44
+        self.GCN11 = nn.Sequential(
+            nn.Conv2d(3, channels, 11), #214
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.Conv2d(channels, channels, 11), #204
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), #102
+            
+            nn.Conv2d(channels, 2*channels, 11),#92
+            nn.BatchNorm2d(2*channels),
+            nn.ReLU(),
+            nn.Conv2d(2*channels, 2*channels, 11), #82
+            nn.BatchNorm2d(2*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),#41
 
-# transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(0, 1)])
+            nn.Conv2d(2*channels, 4*channels, 11), #31
+            nn.BatchNorm2d(4*channels),
+            nn.ReLU(),
+            nn.Conv2d(4*channels, 4*channels, padding = 1), #23
+            nn.BatchNorm2d(4*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # 11
 
-# train_dataset = HistDataset('datasets/train.npz', transform)
-# trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
-#                                           shuffle=True, num_workers=2)
-# test_dataset = HistDataset('datasets/test.npz', transform)
-# testloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
-#                                           shuffle=False, num_workers=2)
+            nn.Conv2d(4*channels, 8*channels, 11),#
+            nn.BatchNorm2d(8*channels),
+            nn.ReLU(),
 
-device = 'cuda:1'
-GCN = ConcGCN().to(device)
+            nn.Flatten(1),
+            nn.Dropout(0.2),
+            nn.Linear(8*channels, 128),
+            nn.ReLU(),
+            nn.Linear(128, 9)
+        )
+        channels = 48
+        self.GCN7 = nn.Sequential(
+            nn.Conv2d(3, channels, 7), #218
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.Conv2d(channels, channels, 7), #212
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), #106
+            
+            nn.Conv2d(channels, 2*channels, 7),#100
+            nn.BatchNorm2d(2*channels),
+            nn.ReLU(),
+            nn.Conv2d(2*channels, 2*channels, 7), #94
+            nn.BatchNorm2d(2*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),#47
 
-GCN.load_state_dict(torch.load("/home/e.murin/histological-image-classification/pretrained/ConcGCN5.pth"))
+            nn.Conv2d(2*channels, 4*channels, 7), #41
+            nn.BatchNorm2d(4*channels),
+            nn.ReLU(),
+            nn.Conv2d(4*channels, 4*channels, 7), #35
+            nn.BatchNorm2d(4*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # 17
+            
+            nn.Conv2d(4*channels, 8*channels, 7), #11
+            nn.BatchNorm2d(8*channels),
+            nn.ReLU(),
+            nn.Conv2d(8*channels, 8*channels, 7), #5
+            nn.BatchNorm2d(8*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), #2
 
-# criterion = nn.CrossEntropyLoss()
-# optimizer = optim.Adam(GCN.parameters(), lr = 0.01)
-# writer = SummaryWriter(log_dir=f"logs/Hist/ConcGCN")
-# train(10, GCN, trainloader, testloader, optimizer, criterion, writer, device, "pretrained/ConcGCN")
-# print('Finished Training')
+            nn.Flatten(1),
+            nn.Dropout(0.2),
+            nn.Linear(8*4*channels, 128),
+            nn.ReLU(),
+            nn.Linear(128, 9)
+        )
+        channels = 36
+        self.GCN9 = nn.Sequential(
+            nn.Conv2d(3, channels, 9, padding = 1), #218
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.Conv2d(channels, channels, 9, padding = 1), #212
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), #106
+            
+            nn.Conv2d(channels, 2*channels, 9, padding = 1),#100
+            nn.BatchNorm2d(2*channels),
+            nn.ReLU(),
+            nn.Conv2d(2*channels, 2*channels, 9, padding = 1), #94
+            nn.BatchNorm2d(2*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),#47
 
-print(GCN.w)
+            nn.Conv2d(2*channels, 4*channels, 9, padding = 1), #41
+            nn.BatchNorm2d(4*channels),
+            nn.ReLU(),
+            nn.Conv2d(4*channels, 4*channels, 9, padding = 1), #35
+            nn.BatchNorm2d(4*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # 17
+            
+            nn.Conv2d(4*channels, 8*channels, 9, padding = 1), #11
+            nn.BatchNorm2d(8*channels),
+            nn.ReLU(),
+            nn.Conv2d(8*channels, 8*channels, 9, padding = 1), #5
+            nn.BatchNorm2d(8*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), #2
+
+            nn.Flatten(1),
+            nn.Dropout(0.2),
+            nn.Linear(8*4*channels, 128),
+            nn.ReLU(),
+            nn.Linear(128, 9)
+        )
+        channels = 48
+        self.GCN3 = nn.Sequential(
+            nn.Conv2d(3, channels, 3), #222
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.Conv2d(channels, channels, 3), #220
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), #110
+            
+            nn.Conv2d(channels, 2*channels, 3),#108
+            nn.BatchNorm2d(2*channels),
+            nn.ReLU(),
+            nn.Conv2d(2*channels, 2*channels, 3), #106
+            nn.BatchNorm2d(2*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),#53
+
+            nn.Conv2d(2*channels, 4*channels, 3), #51
+            nn.BatchNorm2d(4*channels),
+            nn.ReLU(),
+            nn.Conv2d(4*channels, 4*channels, 3), #49
+            nn.BatchNorm2d(4*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # 24
+            
+            nn.Conv2d(4*channels, 8*channels, 3), #22
+            nn.BatchNorm2d(8*channels),
+            nn.ReLU(),
+            nn.Conv2d(8*channels, 8*channels, 3), #20
+            nn.BatchNorm2d(8*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # 10
+
+            nn.Conv2d(8*channels, 16*channels, 3),# 8
+            nn.BatchNorm2d(16*channels),
+            nn.ReLU(),
+            nn.Conv2d(16*channels, 16*channels, 3),# 6
+            nn.BatchNorm2d(16*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # 3
+
+            nn.Flatten(1),
+            nn.Dropout(0.2),
+            nn.Linear(16*9*channels, 128),
+            nn.ReLU(),
+            nn.Linear(128, 9)
+        )
+        channels = 32
+        self.GCN5 = nn.Sequential(
+            nn.Conv2d(3, channels, 5, padding = 1), #222
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.Conv2d(channels, channels, 5, padding = 1), #220
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), #110
+            
+            nn.Conv2d(channels, 2*channels, 5, padding = 1),#108
+            nn.BatchNorm2d(2*channels),
+            nn.ReLU(),
+            nn.Conv2d(2*channels, 2*channels, 5, padding = 1), #106
+            nn.BatchNorm2d(2*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),#53
+
+            nn.Conv2d(2*channels, 4*channels, 5, padding = 1), #51
+            nn.BatchNorm2d(4*channels),
+            nn.ReLU(),
+            nn.Conv2d(4*channels, 4*channels, 5, padding = 1), #49
+            nn.BatchNorm2d(4*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # 24
+            
+            nn.Conv2d(4*channels, 8*channels, 5, padding = 1), #22
+            nn.BatchNorm2d(8*channels),
+            nn.ReLU(),
+            nn.Conv2d(8*channels, 8*channels, 5, padding = 1), #20
+            nn.BatchNorm2d(8*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # 10
+
+            nn.Conv2d(8*channels, 16*channels, 5, padding = 1),# 8
+            nn.BatchNorm2d(16*channels),
+            nn.ReLU(),
+            nn.Conv2d(16*channels, 16*channels, 5, padding = 1),# 6
+            nn.BatchNorm2d(16*channels),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), #3
+
+            nn.Flatten(1),
+            nn.Dropout(0.2),
+            nn.Linear(16*9*channels, 128),
+            nn.ReLU(),
+            nn.Linear(128, 9)
+        )
+        self.GCN11.load_state_dict(torch.load("pretrained/CNN11_99.pth"))
+        self.GCN9.load_state_dict(torch.load("pretrained/CNN9_99.pth"))
+        self.GCN7.load_state_dict(torch.load("pretrained/CNN7_99.pth"))
+        self.GCN5.load_state_dict(torch.load("pretrained/CNN5_99.pth"))
+        self.GCN3.load_state_dict(torch.load("pretrained/CNN3_99.pth"))
+        self.w = torch.nn.parameter.Parameter(torch.Tensor([0.2, 0.2, 0.2, 0.2, 0.2]))
+        
+    def forward(self, x):
+        with torch.no_grad():
+            x11 = torch.sigmoid(self.GCN11(x))
+            x9 = torch.sigmoid(self.GCN9(x))
+            x7 = torch.sigmoid(self.GCN7(x))
+            x5 = torch.sigmoid(self.GCN5(x))
+            x3 = torch.sigmoid(self.GCN3(x))
+        x = x3 * self.w[0] + x5 * self.w[1] + x7 * self.w[2] + x9 * self.w[3] + \
+            x11 * self.w[4]
+        
+        return x
+
+def main():
+
+    device = "cuda"
+    batch_size = 64
+
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(0, 1)])
+
+    train_dataset = HistDataset('datasets/train.npz', transform)
+    trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
+                                            shuffle=True, num_workers=1)
+    test_dataset = HistDataset('datasets/test.npz', transform)
+    testloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
+                                            shuffle=False, num_workers=1)
+
+
+
+    concCNN = ConcCNN()
+    summary(concCNN, (3, 224, 224), device= 'cuda')
+
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(concCNN.parameters(), lr = 0.001)
+    writer = SummaryWriter(log_dir=f"logs/concCNN")
+    train(100, concCNN, trainloader, testloader, optimizer, criterion, writer, device, "pretrained/concCNN_")
+    print('Finished Training')
+
+
+if __name__ == '__main__':
+    main()

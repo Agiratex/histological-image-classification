@@ -4,6 +4,7 @@ from tqdm import tqdm
 from collections import defaultdict
 import numpy as np
 from utils.compute_metrics import compute_metrics
+import gc
 
 
 def train_epoch(
@@ -165,3 +166,7 @@ def train(
             epoch=epoch,
         )
         torch.save(model.state_dict(), f"{path}{epoch}.pth")
+        gc.collect()
+
+if __name__ == '__main__':
+    pass
