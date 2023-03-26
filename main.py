@@ -269,7 +269,7 @@ class ConcCNN(nn.Module):
             nn.Conv2d(2*channels, 4*channels, 11), #31
             nn.BatchNorm2d(4*channels),
             nn.ReLU(),
-            nn.Conv2d(4*channels, 4*channels, padding = 1), #23
+            nn.Conv2d(4*channels, 4*channels, 11, padding = 1), #23
             nn.BatchNorm2d(4*channels),
             nn.ReLU(),
             nn.MaxPool2d(2, 2), # 11
@@ -286,34 +286,34 @@ class ConcCNN(nn.Module):
         )
         channels = 48
         self.GCN7 = nn.Sequential(
-            nn.Conv2d(3, channels, 7), #218
+            GaborConv(3, channels, 7, sigma = 2, n_filters=4), #218
             nn.BatchNorm2d(channels),
             nn.ReLU(),
-            nn.Conv2d(channels, channels, 7), #212
+            GaborConv(channels, channels, 7, sigma = 2, n_filters=4), #212
             nn.BatchNorm2d(channels),
             nn.ReLU(),
             nn.MaxPool2d(2, 2), #106
             
-            nn.Conv2d(channels, 2*channels, 7),#100
+            GaborConv(channels, 2*channels, 7, sigma = 2, n_filters=4),#100
             nn.BatchNorm2d(2*channels),
             nn.ReLU(),
-            nn.Conv2d(2*channels, 2*channels, 7), #94
+            GaborConv(2*channels, 2*channels, 7, sigma = 2, n_filters=4), #94
             nn.BatchNorm2d(2*channels),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),#47
 
-            nn.Conv2d(2*channels, 4*channels, 7), #41
+            GaborConv(2*channels, 4*channels, 7, sigma = 2, n_filters=4), #41
             nn.BatchNorm2d(4*channels),
             nn.ReLU(),
-            nn.Conv2d(4*channels, 4*channels, 7), #35
+            GaborConv(4*channels, 4*channels, 7, sigma = 2, n_filters=4), #35
             nn.BatchNorm2d(4*channels),
             nn.ReLU(),
             nn.MaxPool2d(2, 2), # 17
             
-            nn.Conv2d(4*channels, 8*channels, 7), #11
+            GaborConv(4*channels, 8*channels, 7, sigma = 2, n_filters=4), #11
             nn.BatchNorm2d(8*channels),
             nn.ReLU(),
-            nn.Conv2d(8*channels, 8*channels, 7), #5
+            GaborConv(8*channels, 8*channels, 7, sigma = 2, n_filters=4), #5
             nn.BatchNorm2d(8*channels),
             nn.ReLU(),
             nn.MaxPool2d(2, 2), #2
@@ -412,7 +412,7 @@ class ConcCNN(nn.Module):
             nn.ReLU(),
             nn.Linear(128, 9)
         )
-        channels = 32
+        channels = 48
         self.GCN5 = nn.Sequential(
             nn.Conv2d(3, channels, 5, padding = 1), #222
             nn.BatchNorm2d(channels),
@@ -484,6 +484,11 @@ def main():
     device = "cuda"
     batch_size = 64
 
+    GResNet_3of4 = GResNet50(gabor_layers=3).to(device)
+    GResNet_3of4.fc = nn.Linear(2048, 9)
+    GResNet_3of4 = GResNet_3of4.to(device)
+    summary(GResNet_3of4, (3, 224, 224), device= 'cuda')
+
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(0, 1)])
 
     train_dataset = HistDataset('datasets/train.npz', transform)
@@ -495,14 +500,13 @@ def main():
 
 
 
-    concCNN = ConcCNN()
-    summary(concCNN, (3, 224, 224), device= 'cuda')
+    
 
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(concCNN.parameters(), lr = 0.001)
-    writer = SummaryWriter(log_dir=f"logs/concCNN")
-    train(100, concCNN, trainloader, testloader, optimizer, criterion, writer, device, "pretrained/concCNN_")
+    optimizer = optim.Adam(GResNet_3of4.parameters(), lr = 0.001)
+    writer = SummaryWriter(log_dir=f"logs/GResNet7_3of4")
+    train(100, GResNet_3of4, trainloader, testloader, optimizer, criterion, writer, device, "pretrained/GResNet7_3of4/GResNet7_3of4_")
     print('Finished Training')
 
 
