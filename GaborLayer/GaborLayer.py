@@ -8,11 +8,40 @@ from typing import Tuple
 import numpy as np
 
 
-def getGaborFilterBank(size : Tuple[int,int] = (3,3), sigma : float = 1.0, n_filters : int = 4, lam : float = 2, gamma : float = 0.1) -> torch.Tensor:
-    bank = []
-    for i in range(n_filters):
-        bank.append(getGaborKernel(size, sigma, i*np.pi/n_filters, lam, gamma, 0))
-    return torch.Tensor(np.array(bank)).unsqueeze(1)
+def getGaborFilterBank(size : Tuple[int,int] = (3,3), sigma = 1.0, n_filters = 4, lam = 2, gamma = 0.1, shape = [0], device = 'cpu') -> torch.Tensor:
+    weight = torch.zeros([n_filters, *shape]).to(device)
+
+    sz_x = shape[2]
+
+    sz_y = shape[3]
+    
+    for orientation in range(n_filters):
+        theta = np.pi / n_filters * orientation
+
+        sigma_x = sigma
+        sigma_y = sigma / gamma
+
+        # Bounding box
+        nstds = 3  # Number of standard deviation sigma
+        y, x = np.meshgrid(torch.arange(-np.ceil(sz_y/2) + 1, np.ceil(sz_y/2)), torch.arange(-np.ceil(sz_x/2) + 1, np.ceil(sz_x/2)))
+
+        x = torch.cat([torch.cat([torch.Tensor(x).to(device).unsqueeze(0)]*shape[1]).unsqueeze(0)]*shape[0])
+        y = torch.cat([torch.cat([torch.Tensor(y).to(device).unsqueeze(0)]*shape[1]).unsqueeze(0)]*shape[0])
+
+        # Rotation
+        x_theta = x * np.cos(theta) + y * np.sin(theta)
+        y_theta = -x * np.sin(theta) + y * np.cos(theta)
+
+        ex = torch.exp(
+            -0.5 * (x_theta.to(device)**2/sigma_x.to(device).view(*sigma_x.shape, 1, 1)**2 + y_theta.to(device)**2 / sigma_y.to(device).view(*sigma_y.shape, 1, 1)**2)
+        ).to(device)
+
+
+        cos = torch.cos(2 * np.pi / lam.view(*sigma_y.shape, 1, 1) * x_theta.to(device)).to(device)
+
+        weight[orientation] = ex * cos
+
+    return weight.to(device)
 
 
 class GaborConv(_ConvNd):
@@ -22,6 +51,7 @@ class GaborConv(_ConvNd):
                     bias=False,
                     sigma : float = 1.0, n_filters : int = 4, 
                     lam : float = 2, gamma : float = 0.1):
+
         if groups != 1:
             raise ValueError('Group-conv not supported!')
         kernel_size = _pair(kernel_size)
@@ -34,17 +64,27 @@ class GaborConv(_ConvNd):
         self.kernel_size = kernel_size
         self.stride = stride
         self.n_filters = n_filters
-        self.gabor_bank = getGaborFilterBank(kernel_size, sigma, n_filters, 
-                                                lam, gamma)
+        self.sigma = torch.nn.parameter.Parameter(data = torch.ones(self.weight.shape[:2]))
+        self.lam = torch.nn.parameter.Parameter(data = torch.ones(self.weight.shape[:2]))
+        self.gamma = torch.nn.parameter.Parameter(data = torch.ones(self.weight.shape[:2]))
+        
 
     def forward(self, x):
+        
+        self.gabor_bank = getGaborFilterBank(self.kernel_size, self.sigma, self.n_filters, 
+                                                self.lam, self.gamma, self.weight.shape, self.weight.device)
         pad = self.kernel_size[0]//2
-        new_weight = F.pad(self.weight.view(-1, 1, self.weight.size()[-1], 
-                            self.weight.size()[-1]), (pad,pad,pad,pad), mode='constant')
-        new_weight = F.conv2d(new_weight, self.gabor_bank.to(new_weight.device)).view(-1, 
-                    self.weight.size()[1], self.weight.size()[2], self.weight.size()[3])
-        new_weight
-        y = F.conv2d(x, new_weight, padding = self.padding, stride = self.stride)
+
+        new_weight = F.pad(self.weight, (pad,pad,pad,pad), mode='constant').to(self.weight.device)
+
+        new_weight = new_weight.view(1, -1, new_weight.shape[-2], new_weight.shape[-1]).to(self.weight.device)
+
+        new_weight = F.conv2d(new_weight, self.gabor_bank.to(self.weight.device).view(-1, 1, *self.kernel_size), groups=new_weight.shape[1]).to(self.weight.device)
+
+        new_weight = new_weight.view(self.out_channels*self.n_filters, self.in_channels, *self.kernel_size).to(self.weight.device)
+
+        y = F.conv2d(x, new_weight, padding = self.padding, stride = self.stride).to(self.weight.device)
+        
         return y
 
 

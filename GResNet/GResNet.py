@@ -10,9 +10,9 @@ def gconv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, 
     return GaborConv(
         in_planes,
         out_planes,
-        kernel_size=7,
+        kernel_size=5,
         stride=stride,
-        padding=dilation,
+        padding=2,
         groups=groups,
         bias=False,
         dilation=dilation,
@@ -271,7 +271,7 @@ class GResNet(nn.Module):
         self._norm_layer = norm_layer
 
         self.inplanes = 64
-        self.dilation = 3
+        self.dilation = 1
         if replace_stride_with_dilation is None:
             # each element in the tuple indicates if we should replace
             # the 2x2 stride with a dilated convolution instead
@@ -383,7 +383,6 @@ class GResNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
