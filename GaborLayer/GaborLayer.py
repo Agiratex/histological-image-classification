@@ -18,11 +18,9 @@ def getGaborFilterBank(size : Tuple[int,int] = (3,3), sigma = 1.0, n_filters = 4
     for orientation in range(n_filters):
         theta = np.pi / n_filters * orientation
 
-        sigma_x = sigma
-        sigma_y = sigma / gamma
+        sigma_x = sigma * 10
+        sigma_y = sigma * 10 / gamma
 
-        # Bounding box
-        nstds = 3  # Number of standard deviation sigma
         y, x = np.meshgrid(torch.arange(-np.ceil(sz_y/2) + 1, np.ceil(sz_y/2)), torch.arange(-np.ceil(sz_x/2) + 1, np.ceil(sz_x/2)))
 
         x = torch.cat([torch.cat([torch.Tensor(x).to(device).unsqueeze(0)]*shape[1]).unsqueeze(0)]*shape[0])
@@ -37,7 +35,7 @@ def getGaborFilterBank(size : Tuple[int,int] = (3,3), sigma = 1.0, n_filters = 4
         ).to(device)
 
 
-        cos = torch.cos(2 * np.pi / lam.view(*sigma_y.shape, 1, 1) * x_theta.to(device)).to(device)
+        cos = torch.cos(2 * np.pi / lam.view(*sigma_y.shape, 1, 1) / 20 * x_theta.to(device)).to(device)
 
         weight[orientation] = ex * cos
 
@@ -64,9 +62,9 @@ class GaborConv(_ConvNd):
         self.kernel_size = kernel_size
         self.stride = stride
         self.n_filters = n_filters
-        self.sigma = torch.nn.parameter.Parameter(data = torch.ones(self.weight.shape[:2]))
-        self.lam = torch.nn.parameter.Parameter(data = torch.ones(self.weight.shape[:2]))
-        self.gamma = torch.nn.parameter.Parameter(data = torch.ones(self.weight.shape[:2]))
+        self.sigma = torch.nn.parameter.Parameter(data = torch.ones(self.weight.shape[:2]) / 10)
+        self.lam = torch.nn.parameter.Parameter(data = torch.ones(self.weight.shape[:2]) / 10)
+        self.gamma = torch.nn.parameter.Parameter(data = torch.ones(self.weight.shape[:2]) / 10)
         
 
     def forward(self, x):
