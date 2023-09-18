@@ -484,28 +484,30 @@ def main():
     device = "cuda"
     batch_size = 64
 
-    GResNet_3of4 = GResNet50(gabor_layers=4).to(device)
-    summary(GResNet_3of4, (3, 224, 224), device= 'cuda')
+    GResNet_3of4 = GResNet50(gabor_layers=4)#.to(device)
+    # summary(GResNet_3of4, (3, 224, 224), device= 'cuda')
 
-    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(0, 1)])
+    # transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(0, 1)])
 
-    train_dataset = HistDataset('datasets/train.npz', transform)
-    trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
-                                            shuffle=True, num_workers=1)
-    test_dataset = HistDataset('datasets/test.npz', transform)
-    testloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
-                                            shuffle=False, num_workers=1)
+    # train_dataset = HistDataset('datasets/train.npz', transform)
+    # trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
+    #                                         shuffle=True, num_workers=1)
+    # test_dataset = HistDataset('datasets/test.npz', transform)
+    # testloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
+    #                                         shuffle=False, num_workers=1)
 
 
-
+    GResNet_3of4.load_state_dict(torch.load("AGResNet5_99.pth", map_location = torch.device('cpu')))
+    
+    print(GResNet_3of4.layer1[1].conv2)
     
 
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(GResNet_3of4.parameters(), lr = 0.001)
-    writer = SummaryWriter(log_dir=f"logs/AGResNet5")
-    train(100, GResNet_3of4, trainloader, testloader, optimizer, criterion, writer, device, "pretrained/AGResNet5/AGResNet5_")
-    print('Finished Training')
+    # criterion = nn.CrossEntropyLoss()
+    # optimizer = optim.Adam(GResNet_3of4.parameters(), lr = 0.001)
+    # writer = SummaryWriter(log_dir=f"logs/AGResNet5")
+    # train(100, GResNet_3of4, trainloader, testloader, optimizer, criterion, writer, device, "pretrained/AGResNet5/AGResNet5_")
+    # print('Finished Training')
 
 
 if __name__ == '__main__':

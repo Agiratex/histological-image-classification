@@ -25,7 +25,7 @@ def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, d
         out_planes,
         kernel_size=7,
         stride=stride,
-        padding=9,
+        padding=3,
         groups=groups,
         bias=False,
         dilation=dilation,
